@@ -39,4 +39,5 @@ Thumbs.db
 *.swo
 *~
 
+# Gemini agent memory
 .agent_memory
