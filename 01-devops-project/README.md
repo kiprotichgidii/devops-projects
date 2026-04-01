@@ -11,12 +11,12 @@ This project demonstrates a production-ready approach to hosting a secure static
 ## Project Structure
 
 ```
-.github/workflows/            # GitHub Actions CI/CD workflows
 01-devops-project/
 ├── app/                      # Contains the static website code (e.g., index.html)
-├── cloudformation/           # CloudFormation template (template.yaml) and deployment scripts
-└── terraform/                # Main Terraform configuration for the website
-    └── state-backend/        # Terraform configuration for the remote S3 backend
+├── cloudformation/           # CloudFormation template (template.yaml)
+├── terraform/                # Main Terraform configuration for the website
+├── terraform-backend/
+└── .github/workflows/        # GitHub Actions CI/CD workflows
 ```
 
 ## Prerequisites
@@ -39,44 +39,45 @@ You can deploy this infrastructure using either **Terraform** or **CloudFormatio
 
 The Terraform setup uses a remote S3 backend with DynamoDB state locking to ensure safe, concurrent deployments via CI/CD.
 
-**1. Deploy the Backend (One-Time Setup)**
+**1. Deploy the State Backend (One-Time Setup)**
 Before running the main deployment, you must provision the S3 bucket and DynamoDB table used for Terraform state.
+
 ```bash
-cd terraform/state-backend
-terraform init
-terraform apply
+cd terraform-backend
+tofu init
+tofu apply
 ```
 
 **2. Deploy the Infrastructure**
-```bash
-cd ..
-# (You should now be in the 01-devops-project/terraform directory)
-terraform init
-terraform apply
+
+```sh
+cd ../terraform
+tofu init
+tofu apply
 ```
 
 ### Option 2: CloudFormation
 
 If you prefer native AWS tooling, you can deploy the exact same architecture using CloudFormation.
 
-```bash
+```sh
 cd cloudformation
 aws cloudformation deploy \
   --template-file template.yaml \
   --stack-name devops-static-site-dev \
-  --parameter-overrides ProjectName=devops-static-site Environment=dev
+  --no-fail-on-empty-changeset
+#  --parameter-overrides ProjectName=devops-static-site Environment=dev
 ```
-*(You can also use the `deploy.sh` script provided in the directory)*
 
 ---
 
 ## CI/CD with GitHub Actions
 
-This project includes fully automated deployment and destruction pipelines located in the repository root `.github/workflows/`.
+This project includes fully automated deployment and destruction pipelines located in `.github/workflows/`.
 
 ### Deployment Workflows
 *   **`deploy-terraform.yml`**: Automatically runs on pushes to the `main` branch when changes are detected in `terraform/` or `app/`. It formats, validates, plans, and applies the Terraform configuration, then invalidates the CloudFront cache.
-*   **`deploy-cloudformation.yml`**: Automatically runs on pushes to the `main`. It deploys the CloudFormation stack, syncs the `app/` directory to the S3 bucket, and invalidates the CloudFront cache.
+*   **`deploy.yml` (CloudFormation)**: Automatically runs on pushes to `main`. It deploys the CloudFormation stack, syncs the `app/` directory to the S3 bucket, and invalidates the CloudFront cache.
 
 ### Cleanup Workflows
 To avoid incurring unnecessary AWS charges, you can easily tear down the infrastructure via GitHub Actions.
