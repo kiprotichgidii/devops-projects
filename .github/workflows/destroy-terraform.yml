@@ -6,7 +6,7 @@ on:
       confirm_destroy:
         description: 'Type "destroy" to confirm you want to delete all resources'
         required: true
-        default: 'no'
+        default: ''
 
 jobs:
   destroy:
