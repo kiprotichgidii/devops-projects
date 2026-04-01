@@ -1,0 +1,63 @@
+name: Deploy Static Site to AWS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '01-devops-project/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 01-devops-project
+        
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # Change this if your AWS region is different
+
+      - name: Deploy CloudFormation Stack
+        run: |
+          aws cloudformation deploy \
+            --template-file cloudformation/template.yaml \
+            --stack-name devops-static-site-dev \
+            --no-fail-on-empty-changeset
+         #   --parameter-overrides ProjectName=devops-static-site Environment=dev 
+
+      - name: Get S3 Bucket Name
+        id: get-bucket
+        run: |
+          BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name devops-static-site-dev \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+            --output text)
+          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
+
+      - name: Get CloudFront Distribution ID
+        id: get-cf
+        run: |
+          CF_ID=$(aws cloudformation describe-stacks \
+            --stack-name devops-static-site-dev \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" \
+            --output text)
+          echo "cf_id=$CF_ID" >> $GITHUB_OUTPUT
+
+      - name: Sync App to S3
+        run: |
+          aws s3 sync app/ s3://${{ steps.get-bucket.outputs.bucket_name }} --delete
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.get-cf.outputs.cf_id }} \
+            --paths "/*"
