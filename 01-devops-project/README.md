@@ -10,13 +10,13 @@ This project demonstrates a production-ready approach to hosting a secure static
 
 ## Project Structure
 
-```
+```sh
+github/workflows/            # GitHub Actions CI/CD workflows
 01-devops-project/
 ├── app/                      # Contains the static website code (e.g., index.html)
-├── cloudformation/           # CloudFormation template (template.yaml)
-├── terraform/                # Main Terraform configuration for the website
-├── terraform-backend/
-└── .github/workflows/        # GitHub Actions CI/CD workflows
+├── cloudformation/           # CloudFormation template (template.yaml) and deployment scripts
+└── terraform/                # Main Terraform configuration for the website
+    └── state-backend/        # Terraform configuration for the remote S3 backend                                                                                                                                                  
 ```
 
 ## Prerequisites
