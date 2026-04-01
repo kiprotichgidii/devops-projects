@@ -1,0 +1,44 @@
+name: Destroy CloudFormation Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: 'Type "destroy" to confirm you want to delete all resources'
+        required: true
+        default: 'no'
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm_destroy == 'destroy'
+        
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Empty S3 Bucket before destroy
+        run: |
+          # Retrieve the bucket name from CloudFormation exports
+          BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name devops-static-site-dev \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+            --output text || echo "")
+            
+          if [ -n "$BUCKET_NAME" ] && [ "$BUCKET_NAME" != "None" ]; then
+            echo "Emptying bucket $BUCKET_NAME..."
+            aws s3 rm s3://$BUCKET_NAME --recursive
+          fi
+        continue-on-error: true
+
+      - name: Delete CloudFormation Stack
+        run: |
+          aws cloudformation delete-stack --stack-name devops-static-site-dev
+          
+      - name: Wait for Stack Deletion
+        run: |
+          aws cloudformation wait stack-delete-complete --stack-name devops-static-site-dev
