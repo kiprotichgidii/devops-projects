@@ -15,3 +15,9 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "domain_name" {
+  description = "The custom domain name to use for the website (e.g., example.com)"
+  type        = string
+  default     = "" # Empty means no custom domain will be configured
+}

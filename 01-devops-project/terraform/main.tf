@@ -26,6 +26,7 @@ resource "aws_cloudfront_distribution" "website" {
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
+  aliases             = var.domain_name != "" ? ["${var.environment}.${var.domain_name}"] : []
 
   origin {
     domain_name              = aws_s3_bucket.website.bucket_regional_domain_name
@@ -58,7 +59,10 @@ resource "aws_cloudfront_distribution" "website" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = var.domain_name == "" ? true : false
+    acm_certificate_arn            = var.domain_name != "" ? aws_acm_certificate_validation.website[0].certificate_arn : null
+    ssl_support_method             = var.domain_name != "" ? "sni-only" : null
+    minimum_protocol_version       = var.domain_name != "" ? "TLSv1.2_2021" : "TLSv1"
   }
 }
 
@@ -104,4 +108,3 @@ resource "aws_s3_object" "app_files" {
   }, split(".", each.value)[length(split(".", each.value)) - 1], "application/octet-stream")
   etag = filemd5("../app/${each.value}")
 }
-
