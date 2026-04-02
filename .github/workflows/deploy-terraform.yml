@@ -52,7 +52,7 @@ jobs:
             --distribution-id $CF_ID \
             --paths "/*"
 
-      - name: Output CloudFront Domain Name
+      - name: Output Website URL
         run: |
-          DOMAIN_NAME=$(terraform output -raw cloudfront_domain_name)
-          echo "🚀 Website is live at: https://$DOMAIN_NAME"
+          WEBSITE_URL=$(terraform output -raw website_url)
+          echo "🚀 Website is live at: https://$WEBSITE_URL"
