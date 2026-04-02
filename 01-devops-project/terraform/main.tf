@@ -84,12 +84,24 @@ resource "aws_s3_bucket_policy" "website" {
   policy = data.aws_iam_policy_document.s3_bucket_policy.json
 }
 
-# Upload the index.html file to the S3 bucket
-resource "aws_s3_object" "index" {
-  bucket       = aws_s3_bucket.website.id
-  key          = "index.html"
-  source       = "../app/index.html"
-  content_type = "text/html"
-  etag         = filemd5("../app/index.html")
+# Upload all files from the app directory to the S3 bucket
+resource "aws_s3_object" "app_files" {
+  for_each = fileset("../app", "**/*")
+
+  bucket = aws_s3_bucket.website.id
+  key    = each.value
+  source = "../app/${each.value}"
+  content_type = lookup({
+    "html" = "text/html"
+    "css"  = "text/css"
+    "js"   = "application/javascript"
+    "png"  = "image/png"
+    "svg"  = "image/svg+xml"
+    "jpg"  = "image/jpeg"
+    "jpeg" = "image/jpeg"
+    "gif"  = "image/gif"
+    "ico"  = "image/x-icon"
+  }, split(".", each.value)[length(split(".", each.value)) - 1], "application/octet-stream")
+  etag = filemd5("../app/${each.value}")
 }
 
