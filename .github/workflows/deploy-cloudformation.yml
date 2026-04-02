@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - '01-devops-project/cloudformation/**'
-      # - '01-devops-project/app/**'
+      - '01-devops-project/app/**'
   workflow_dispatch:
 
 jobs:
