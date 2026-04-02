@@ -12,3 +12,8 @@ output "cloudfront_distribution_id" {
   description = "The ID of the CloudFront distribution"
   value       = aws_cloudfront_distribution.website.id
 }
+
+output "website_url" {
+  description = "The final URL of the website"
+  value       = var.domain_name != "" ? "${var.environment}.${var.domain_name}" : "${aws_cloudfront_distribution.website.domain_name}"
+}
