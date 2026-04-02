@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: S3 Bucket and CloudFront Distribution for Static Website Hosting
+Description: S3 Bucket, CloudFront Distribution, and Optional Route 53 setup for Static Website Hosting
 
 Parameters:
   ProjectName:
@@ -10,6 +10,13 @@ Parameters:
     Type: String
     Description: Environment name
     Default: dev
+  DomainName:
+    Type: String
+    Description: The custom domain name to use for the website (e.g., example.com). Leave empty to use default CloudFront domain.
+    Default: ""
+
+Conditions:
+  HasDomainName: !Not [!Equals [!Ref DomainName, ""]]
 
 Resources:
   WebsiteBucket:
@@ -32,6 +39,43 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
+  # Route 53 and ACM Resources (Conditionally Created)
+  MainZone:
+    Type: AWS::Route53::HostedZone
+    Condition: HasDomainName
+    Properties:
+      Name: !Ref DomainName
+
+  SubdomainZone:
+    Type: AWS::Route53::HostedZone
+    Condition: HasDomainName
+    Properties:
+      Name: !Sub "${Environment}.${DomainName}"
+      HostedZoneTags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  SubdomainNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasDomainName
+    Properties:
+      HostedZoneId: !Ref MainZone
+      Name: !Sub "${Environment}.${DomainName}"
+      Type: NS
+      TTL: '30'
+      ResourceRecords: !GetAtt SubdomainZone.NameServers
+
+  WebsiteCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: HasDomainName
+    Properties:
+      DomainName: !Sub "${Environment}.${DomainName}"
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Sub "${Environment}.${DomainName}"
+          HostedZoneId: !Ref SubdomainZone
+
+  # CloudFront Distribution
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -39,6 +83,10 @@ Resources:
         Enabled: true
         IPV6Enabled: true
         DefaultRootObject: index.html
+        Aliases: !If 
+          - HasDomainName
+          - - !Sub "${Environment}.${DomainName}"
+          - !Ref "AWS::NoValue"
         Origins:
           - DomainName: !GetAtt WebsiteBucket.RegionalDomainName
             Id: !Ref WebsiteBucket
@@ -64,8 +112,12 @@ Resources:
         Restrictions:
           GeoRestriction:
             RestrictionType: none
-        ViewerCertificate:
-          CloudFrontDefaultCertificate: true
+        ViewerCertificate: !If
+          - HasDomainName
+          - AcmCertificateArn: !Ref WebsiteCertificate
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
 
   WebsiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -83,6 +135,18 @@ Resources:
               StringEquals:
                 "AWS:SourceArn": !Sub "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
 
+  WebsiteDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasDomainName
+    Properties:
+      HostedZoneId: !Ref SubdomainZone
+      Name: !Sub "${Environment}.${DomainName}"
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2 # Hardcoded HostedZone ID for all CloudFront distributions
+        EvaluateTargetHealth: false
+
 Outputs:
   BucketName:
     Description: Name of the S3 bucket
@@ -93,3 +157,9 @@ Outputs:
   CloudFrontDomainName:
     Description: CloudFront Domain Name
     Value: !GetAtt CloudFrontDistribution.DomainName
+  WebsiteURL:
+    Description: The final URL of the website
+    Value: !If 
+      - HasDomainName
+      - !Sub "https://${Environment}.${DomainName}"
+      - !Sub "https://${CloudFrontDistribution.DomainName}"

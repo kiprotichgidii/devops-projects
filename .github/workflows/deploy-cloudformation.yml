@@ -33,7 +33,7 @@ jobs:
             --template-file cloudformation/template.yaml \
             --stack-name devops-static-site-dev \
             --no-fail-on-empty-changeset
-         #   --parameter-overrides ProjectName=devops-static-site Environment=dev 
+         #   --parameter-overrides ProjectName=devops-static-site Environment=dev DomainName=example.com
 
       - name: Get S3 Bucket Name
         id: get-bucket
@@ -53,13 +53,13 @@ jobs:
             --output text)
           echo "cf_id=$CF_ID" >> $GITHUB_OUTPUT
 
-      - name: Output CloudFront Domain Name
+      - name: Output Website URL
         run: |
-          CF_DOMAIN=$(aws cloudformation describe-stacks \
+          WEBSITE_URL=$(aws cloudformation describe-stacks \
             --stack-name devops-static-site-dev \
-            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDomainName'].OutputValue" \
+            --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
             --output text)
-          echo "🚀 Website is live at: https://$CF_DOMAIN"
+          echo "🚀 Website is live at: $WEBSITE_URL"
 
       - name: Sync App to S3
         run: |
