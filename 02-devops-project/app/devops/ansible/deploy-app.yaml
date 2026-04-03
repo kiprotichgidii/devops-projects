@@ -1,0 +1,70 @@
+---
+- name: Deploy AdviceMate Web Application
+  hosts: all
+  remote_user: root
+  become: yes
+  tasks:
+    - name: Update and Upgrade System
+      apt: 
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Dependencies
+      dnf:
+        name:
+          - nginx
+        state: present
+      tags: install
+
+    - name: Set up application directory
+      file:
+        path: /var/www/advicemate/
+        state: directory
+        mode: '0755'
+
+    - name: Copy AdviceMate app to remote server
+      synchronize:
+        src: "{{ item }}"
+        dest: /var/www/advicemate/
+        recursive: yes
+        delete: yes
+      with_items:
+        - "{{ playbook_dir }}/../../app.js"
+        - "{{ playbook_dir }}/../../index.html"
+        - "{{ playbook_dir }}/../../styles.css"
+        - "{{ playbook_dir }}/../../images"
+
+    - name: Set file ownership and permissions
+      file:
+        path: /var/www/advicemate/
+        owner: www-data
+        group: www-data
+        mode: '0755'
+        recurse: yes
+
+    - name: Configure NGINX
+      copy:
+        src: ../../conf/nginx.conf
+        dest: /etc/nginx/sites-available/advicemate
+      notify: restart nginx
+
+    - name: Enable NGINX site
+      command: ln -s /etc/nginx/sites-available/advicemate /etc/nginx/sites-enabled
+      args:
+        creates: /etc/nginx/sites-enabled/advicemate
+
+    - name: Remove default NGINX site
+      file:
+        path: "{{ item }}"
+        state: absent
+      notify: restart nginx
+      with_items:
+        - /etc/nginx/sites-enabled/default
+        - /etc/nginx/sites-available/default
+
+  handlers:
+    - name: restart nginx
+      systemd:
+        name: nginx
+        state: restarted
