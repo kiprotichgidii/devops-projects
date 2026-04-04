@@ -1,0 +1,89 @@
+name: Deploy Project 02 (Terraform & Ansible)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '02-devops-project/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        working-directory: 02-devops-project/terraform
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        working-directory: 02-devops-project/terraform
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: 02-devops-project/terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: 02-devops-project/terraform
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: 02-devops-project/terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Wait for EC2 Instances to initialize
+        run: |
+          echo "Waiting 60 seconds for Auto Scaling Group instances to boot up..."
+          sleep 60
+
+      - name: Generate Ansible Inventory
+        working-directory: 02-devops-project/terraform
+        run: |
+          chmod +x generate-inventory.sh
+          ./generate-inventory.sh
+
+      - name: Setup Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      - name: Disable strict host key checking for Ansible
+        run: |
+          mkdir -p ~/.ssh
+          echo "Host *" > ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+          echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+          chmod 400 ~/.ssh/config
+
+      - name: Ensure correct permissions for SSH key
+        working-directory: 02-devops-project/terraform
+        run: chmod 400 ansible-key.pem
+
+      - name: Run Ansible NGINX Setup
+        working-directory: 02-devops-project/app/devops/ansible
+        run: ansible-playbook -i inventory.ini install-nginx.yaml
+
+      - name: Run Ansible App Deployment
+        working-directory: 02-devops-project/app/devops/ansible
+        run: ansible-playbook -i inventory.ini deploy-app.yaml
+
+      - name: Output Application Load Balancer URL
+        working-directory: 02-devops-project/terraform
+        run: |
+          ALB_URL=$(terraform output -raw alb_dns_name)
+          echo "🚀 AdviceMate is live at: http://$ALB_URL"
