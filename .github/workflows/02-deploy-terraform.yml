@@ -1,11 +1,11 @@
-name: Deploy Project 02 (Terraform & Ansible)
+name: Deploy Webapp with Terraform
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '02-devops-project/**'
+  #push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - '02-devops-project/**'
   workflow_dispatch:
 
 jobs:
@@ -48,8 +48,8 @@ jobs:
 
       - name: Wait for EC2 Instances to initialize
         run: |
-          echo "Waiting 60 seconds for Auto Scaling Group instances to boot up..."
-          sleep 60
+          echo "Waiting 120 seconds for Auto Scaling Group instances to boot up..."
+          sleep 120
 
       - name: Generate Ansible Inventory
         working-directory: 02-devops-project/terraform
