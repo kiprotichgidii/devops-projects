@@ -52,7 +52,7 @@ jobs:
           sleep 120
 
       - name: Generate Ansible Inventory
-        working-directory: 02-devops-project/terraform
+        working-directory: 02-devops-project/app/devops/scripts
         run: |
           chmod +x generate-inventory.sh
           ./generate-inventory.sh
