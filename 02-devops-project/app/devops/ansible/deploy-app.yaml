@@ -1,21 +1,44 @@
 ---
 - name: Deploy AdviceMate Web Application
   hosts: all
-  remote_user: root
   become: yes
   tasks:
-    - name: Update and Upgrade System
+    - name: Update and Upgrade System (Debian)
       apt: 
         upgrade: yes
         update_cache: yes
         cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
 
-    - name: Install Dependencies
+    - name: Update System (RedHat)
+      dnf:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    - name: Install Dependencies (Debian)
+      apt:
+        name:
+          - nginx
+          - rsync
+        state: present
+      tags: install
+      when: ansible_os_family == "Debian"
+
+    - name: Install Dependencies (RedHat)
       dnf:
         name:
           - nginx
+          - rsync
         state: present
       tags: install
+      when: ansible_os_family == "RedHat"
+
+    - name: Ensure NGINX is running and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes
 
     - name: Set up application directory
       file:
@@ -38,23 +61,26 @@
     - name: Set file ownership and permissions
       file:
         path: /var/www/advicemate/
-        owner: www-data
-        group: www-data
+        owner: "{{ 'www-data' if ansible_os_family == 'Debian' else 'nginx' }}"
+        group: "{{ 'www-data' if ansible_os_family == 'Debian' else 'nginx' }}"
         mode: '0755'
         recurse: yes
 
-    - name: Configure NGINX
+    - name: Configure NGINX (Debian)
       copy:
         src: ../../conf/nginx.conf
         dest: /etc/nginx/sites-available/advicemate
       notify: restart nginx
+      when: ansible_os_family == "Debian"
 
-    - name: Enable NGINX site
-      command: ln -s /etc/nginx/sites-available/advicemate /etc/nginx/sites-enabled
-      args:
-        creates: /etc/nginx/sites-enabled/advicemate
+    - name: Enable NGINX site (Debian)
+      file:
+        src: /etc/nginx/sites-available/advicemate
+        dest: /etc/nginx/sites-enabled/advicemate
+        state: link
+      when: ansible_os_family == "Debian"
 
-    - name: Remove default NGINX site
+    - name: Remove default NGINX site (Debian)
       file:
         path: "{{ item }}"
         state: absent
@@ -62,6 +88,14 @@
       with_items:
         - /etc/nginx/sites-enabled/default
         - /etc/nginx/sites-available/default
+      when: ansible_os_family == "Debian"
+
+    - name: Configure NGINX (RedHat)
+      copy:
+        src: ../../conf/nginx.conf
+        dest: /etc/nginx/conf.d/advicemate.conf
+      notify: restart nginx
+      when: ansible_os_family == "RedHat"
 
   handlers:
     - name: restart nginx
