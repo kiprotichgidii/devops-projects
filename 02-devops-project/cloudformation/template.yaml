@@ -1,0 +1,183 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Application Load Balancer with Auto Scaling Groups for Ubuntu and Amazon Linux
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: advicemate
+    Description: Name of the project
+  InstanceType:
+    Type: String
+    Default: t3.small
+    Description: EC2 instance type
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC ID to deploy the resources into (select default VPC)
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: The Subnet IDs for the Application Load Balancer and Auto Scaling Groups (select at least two default subnets)
+
+Resources:
+  PrivateKey:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub "${ProjectName}-key-${AWS::StackName}"
+      KeyType: rsa
+
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP traffic to ALB
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-alb-sg"
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP from ALB and SSH from anywhere
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-web-sg"
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${ProjectName}-alb"
+      Scheme: internet-facing
+      Type: application
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      Subnets: !Ref Subnets
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-alb"
+
+  AlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${ProjectName}-tg"
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      HealthCheckPath: /
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      HealthCheckTimeoutSeconds: 3
+      HealthCheckIntervalSeconds: 30
+
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AlbTargetGroup
+
+  UbuntuLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub "${ProjectName}-ubuntu-"
+      LaunchTemplateData:
+        ImageId: '{{resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id}}'
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref PrivateKey
+        NetworkInterfaces:
+          - AssociatePublicIpAddress: true
+            DeviceIndex: 0
+            Groups:
+              - !Ref WebSecurityGroup
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub "${ProjectName}-ubuntu-asg"
+              - Key: OS
+                Value: Debian
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 20
+              VolumeType: gp3
+
+  AmazonLinuxLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub "${ProjectName}-amazon-linux-"
+      LaunchTemplateData:
+        ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64}}'
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref DeployerKey
+        NetworkInterfaces:
+          - AssociatePublicIpAddress: true
+            DeviceIndex: 0
+            Groups:
+              - !Ref WebSecurityGroup
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub "${ProjectName}-amazon-linux-asg"
+              - Key: OS
+                Value: RedHat
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: 8
+              VolumeType: gp3
+
+  UbuntuAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub "${ProjectName}-ubuntu-asg"
+      VPCZoneIdentifier: !Join [",", !Ref Subnets]
+      TargetGroupARNs:
+        - !Ref AlbTargetGroup
+      DesiredCapacity: '1'
+      MinSize: '1'
+      MaxSize: '2'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref UbuntuLaunchTemplate
+        Version: !GetAtt UbuntuLaunchTemplate.LatestVersionNumber
+
+  AmazonLinuxAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub "${ProjectName}-amazon-linux-asg"
+      VPCZoneIdentifier: !Join [",", !Ref Subnets]
+      TargetGroupARNs:
+        - !Ref AlbTargetGroup
+      DesiredCapacity: '1'
+      MinSize: '1'
+      MaxSize: '2'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref AmazonLinuxLaunchTemplate
+        Version: !GetAtt AmazonLinuxLaunchTemplate.LatestVersionNumber
+
+Outputs:
+  AlbDnsName:
+    Description: The DNS name of the Application Load Balancer
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+  KeyPairId:
+    Description: The ID of the generated EC2 Key Pair
+    Value: !GetAtt PrivateKey.KeyPairId
