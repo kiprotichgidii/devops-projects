@@ -63,14 +63,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ansible
 
-      # - name: Disable strict host key checking for Ansible
-      #   run: |
-      #     mkdir -p ~/.ssh
-      #     echo "Host *" > ~/.ssh/config
-      #     echo "  StrictHostKeyChecking no" >> ~/.ssh/config
-      #     echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
-      #     chmod 400 ~/.ssh/config
-
       - name: Set Correct Permissions for SSH key
         working-directory: 02-devops-project/terraform
         run: chmod 400 ansible-key.pem
