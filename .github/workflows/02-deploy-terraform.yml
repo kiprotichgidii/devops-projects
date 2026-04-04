@@ -63,23 +63,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ansible
 
-      - name: Disable strict host key checking for Ansible
-        run: |
-          mkdir -p ~/.ssh
-          echo "Host *" > ~/.ssh/config
-          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
-          echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
-          chmod 400 ~/.ssh/config
+      # - name: Disable strict host key checking for Ansible
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     echo "Host *" > ~/.ssh/config
+      #     echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+      #     echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+      #     chmod 400 ~/.ssh/config
 
-      - name: Ensure correct permissions for SSH key
+      - name: Set Correct Permissions for SSH key
         working-directory: 02-devops-project/terraform
         run: chmod 400 ansible-key.pem
 
-      - name: Run Ansible NGINX Setup
+      - name: Install NGINX
         working-directory: 02-devops-project/app/devops/ansible
         run: ansible-playbook -i inventory.ini install-nginx.yaml
 
-      - name: Run Ansible App Deployment
+      - name: Deploy Web Application
         working-directory: 02-devops-project/app/devops/ansible
         run: ansible-playbook -i inventory.ini deploy-app.yaml
 
@@ -88,3 +88,10 @@ jobs:
         run: |
           ALB_URL=$(terraform output -raw alb_dns_name)
           echo "🚀 AdviceMate is live at: http://$ALB_URL"
+
+      - name: Upload SSH Key Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ansible-private-key
+          path: 02-devops-project/terraform/ansible-key.pem
+          retention-days: 1
