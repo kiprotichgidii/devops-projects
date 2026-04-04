@@ -5,17 +5,12 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu-server-24.04-lts"]
+    values = ["ubuntu-server-24.04-lts-*"]
   }
 
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
-  }
-
-  filter {
-    name   = "instance-type"
-    values = [var.instance_type]
   }
 
   filter {
@@ -37,11 +32,6 @@ data "aws_ami" "amazon_linux" {
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
-  }
-
-  filter {
-    name   = "instance-type"
-    values = [var.instance_type]
   }
 
   filter {
