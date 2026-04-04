@@ -1,4 +1,4 @@
-name: Deploy Webapp with Terraform
+name: Deploy Terraform Infrastructure 02
 
 on:
   push:
@@ -47,7 +47,7 @@ jobs:
         working-directory: 02-devops-project/terraform
         run: terraform apply -auto-approve tfplan
 
-      - name: Wait for EC2 Instances to initialize
+      - name: EC2 Instances initialization
         run: |
           echo "Waiting 120 seconds for Auto Scaling Group instances to boot up..."
           sleep 120

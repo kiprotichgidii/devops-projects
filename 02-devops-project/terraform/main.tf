@@ -192,6 +192,14 @@ resource "aws_launch_template" "ubuntu" {
       OS   = "Debian"
     }
   }
+
+  block_device_mappings {
+    device_name = "/dev/sda1"
+    ebs {
+      volume_size = var.volume_size
+      volume_type = "gp3"
+    }
+  }
 }
 
 # Launch Template for Amazon Linux
@@ -211,6 +219,14 @@ resource "aws_launch_template" "amazon_linux" {
     tags = {
       Name = "${var.project_name}-amazon-linux-asg"
       OS   = "RedHat"
+    }
+  }
+
+  block_device_mappings {
+    device_name = "/dev/sda1"
+    ebs {
+      volume_size = var.volume_size
+      volume_type = "gp3"
     }
   }
 }

@@ -1,4 +1,4 @@
-name: Destroy Project 02 (Terraform)
+name: Destroy Terraform Infrastructure 02
 
 on:
   workflow_dispatch:
