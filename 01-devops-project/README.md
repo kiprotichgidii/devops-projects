@@ -4,6 +4,8 @@ This project demonstrates a production-ready approach to hosting a secure static
 
 ## Architecture
 
+![AWS Architecture Diagram](aws_architecture.png)
+
 *   **Amazon S3:** Stores the static assets (HTML, CSS, JS, images). All public access to the bucket is blocked.
 *   **Amazon CloudFront:** A global Content Delivery Network (CDN) that caches the static assets closer to users, providing low-latency access and HTTPS encryption.
 *   **Origin Access Control (OAC):** Secures the connection between CloudFront and S3, ensuring the S3 bucket can only be accessed through the CloudFront distribution.
@@ -33,7 +35,7 @@ To deploy this project, you need:
 
 ---
 
-## Infrastructure as Code (IaC) Options
+## Infrastructure as Code (IaC) Tools
 
 You can deploy this infrastructure using either **Terraform** or **CloudFormation**. Both implementations optionally support setting up a custom domain.
 
