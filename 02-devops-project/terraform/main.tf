@@ -223,7 +223,7 @@ resource "aws_launch_template" "amazon_linux" {
   }
 
   block_device_mappings {
-    device_name = "/dev/sda1"
+    device_name = "/dev/xvda"
     ebs {
       volume_size = var.volume_size
       volume_type = "gp3"

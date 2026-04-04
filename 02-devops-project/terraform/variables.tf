@@ -19,5 +19,5 @@ variable "instance_type" {
 variable "volume_size" {
   description = "Size of the EBS volume"
   type        = number
-  default     = 8
+  default     = 20
 }
