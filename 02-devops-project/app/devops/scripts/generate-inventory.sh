@@ -4,7 +4,7 @@
 # for the public IPs of the instances spun up by the Auto Scaling Groups.
 
 INVENTORY_FILE="../ansible/inventory.ini"
-KEY_PATH="../../../terraform/ansible-key.pem"
+KEY_PATH="../ansible/ansible-key.pem"
 
 echo "Generating Ansible Inventory from ASG instances..."
 

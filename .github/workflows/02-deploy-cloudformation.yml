@@ -1,0 +1,104 @@
+name: Deploy Project 02 (CloudFormation & Ansible)
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - '02-devops-project/cloudformation/**'
+  #     - '02-devops-project/app/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Get Default VPC and Subnets
+        id: vpc_info
+        run: |
+          VPC_ID=$(aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
+          echo "vpc_id=$VPC_ID" >> $GITHUB_OUTPUT
+          
+          # Get the first two subnets for the ALB
+          SUBNETS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" --query "Subnets[0:2].SubnetId" --output text | tr '\t' ',')
+          echo "subnets=$SUBNETS" >> $GITHUB_OUTPUT
+
+      - name: Deploy CloudFormation Stack
+        working-directory: 02-devops-project/cloudformation
+        run: |
+          aws cloudformation deploy \
+            --template-file template.yaml \
+            --stack-name advicemate-cfn-dev \
+            --parameter-overrides VpcId=${{ steps.vpc_info.outputs.vpc_id }} Subnets=${{ steps.vpc_info.outputs.subnets }} \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset
+
+      - name: Retrieve Private Key from SSM
+        working-directory: 02-devops-project/app/devops/ansible
+        run: |
+          # Get KeyPairId from Stack Output
+          KEY_PAIR_ID=$(aws cloudformation describe-stacks \
+            --stack-name advicemate-cfn-dev \
+            --query "Stacks[0].Outputs[?OutputKey=='KeyPairId'].OutputValue" \
+            --output text)
+            
+          # Download the private key from SSM Parameter Store and save it where Ansible expects it
+          aws ssm get-parameter \
+            --name "/ec2/keypair/$KEY_PAIR_ID" \
+            --with-decryption \
+            --query "Parameter.Value" \
+            --output text > ansible-key.pem
+
+      - name: EC2 Instances Initialization
+        run: |
+          echo "Waiting 120 seconds for Auto Scaling Group instances to boot up..."
+          sleep 120
+
+      - name: Generate Ansible Inventory
+        working-directory: 02-devops-project/app/devops/scripts
+        run: |
+          chmod +x generate-inventory.sh
+          ./generate-inventory.sh
+
+      - name: Setup Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      - name: Set Correct Permissions for SSH Key
+        working-directory: 02-devops-project/app/devops/ansible
+        run: chmod 400 ansible-key.pem
+
+      - name: Install NGINX
+        working-directory: 02-devops-project/app/devops/ansible
+        run: ansible-playbook -i inventory.ini install-nginx.yaml
+
+      - name: Deploy Web Application
+        working-directory: 02-devops-project/app/devops/ansible
+        run: ansible-playbook -i inventory.ini deploy-app.yaml
+
+      - name: Output Application Load Balancer URL
+        run: |
+          ALB_URL=$(aws cloudformation describe-stacks \
+            --stack-name advicemate-cfn-dev \
+            --query "Stacks[0].Outputs[?OutputKey=='AlbDnsName'].OutputValue" \
+            --output text)
+          echo "🚀 AdviceMate is live at: http://$ALB_URL"
+
+      - name: Upload SSH Key Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ansible-private-key-cfn
+          path: 02-devops-project/app/devops/ansible/ansible-key.pem
+          retention-days: 3

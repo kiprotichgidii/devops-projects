@@ -126,7 +126,7 @@ resource "aws_key_pair" "deployer" {
 # Local file for private key (so Ansible can use it)
 resource "local_file" "private_key" {
   content         = tls_private_key.deployer.private_key_pem
-  filename        = "${path.module}/ansible-key.pem"
+  filename        = "${path.module}/../app/devops/ansible/ansible-key.pem"
   file_permission = "0400"
 }
 
