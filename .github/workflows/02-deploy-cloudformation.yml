@@ -1,4 +1,4 @@
-name: Deploy Project 02 (CloudFormation & Ansible)
+name: Deploy CloudFormation Infrastructure 02
 
 on:
   # push:
@@ -101,4 +101,4 @@ jobs:
         with:
           name: ansible-private-key-cfn
           path: 02-devops-project/app/devops/ansible/ansible-key.pem
-          retention-days: 3
+          retention-days: 1
