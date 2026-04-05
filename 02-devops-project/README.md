@@ -1,4 +1,4 @@
-# Project 02: Highly Available Web Architecture with Ansible & Terraform/CloudFormation
+# EC2 + Nginx + Load Balancer Setup
 
 This project demonstrates a robust, hybrid infrastructure and configuration management setup. It provisions a highly available AWS infrastructure using Infrastructure as Code (IaC), followed by dynamic application deployment and server configuration using Ansible.
 
@@ -30,7 +30,7 @@ This project demonstrates a robust, hybrid infrastructure and configuration mana
 └── generate_diagram.py            # Script used to generate the architecture diagram
 ```
 
-## How to Deploy
+## Deployment
 
 The entire deployment is fully automated through GitHub Actions.
 
@@ -52,7 +52,7 @@ The entire deployment is fully automated through GitHub Actions.
 5. The URL for the Application Load Balancer is printed in the workflow summary.
 6. The SSH Private Key (`ansible-key.pem`) is uploaded as a GitHub Action Artifact for manual debugging access.
 
-## How to Destroy
+## Destroying AWS Infrastructure
 
 To prevent unnecessary AWS costs, you can destroy all provisioned resources with a single click.
 
