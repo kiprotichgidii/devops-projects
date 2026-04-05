@@ -150,7 +150,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       AutoScalingGroupName: !Sub "${ProjectName}-ubuntu-asg"
-      VPCZoneIdentifier: !Join [",", !Ref Subnets]
+      VPCZoneIdentifier: !Ref Subnets
       TargetGroupARNs:
         - !Ref AlbTargetGroup
       DesiredCapacity: '1'
@@ -164,7 +164,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       AutoScalingGroupName: !Sub "${ProjectName}-amazon-linux-asg"
-      VPCZoneIdentifier: !Join [",", !Ref Subnets]
+      VPCZoneIdentifier: !Ref Subnets
       TargetGroupARNs:
         - !Ref AlbTargetGroup
       DesiredCapacity: '1'
