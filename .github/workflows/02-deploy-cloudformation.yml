@@ -1,12 +1,12 @@
 name: Deploy CloudFormation Infrastructure 02
 
 on:
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - '02-devops-project/cloudformation/**'
-  #     - '02-devops-project/app/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '02-devops-project/cloudformation/**'
+      - '02-devops-project/app/**'
   workflow_dispatch:
 
 jobs:

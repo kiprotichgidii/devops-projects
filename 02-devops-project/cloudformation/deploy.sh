@@ -4,4 +4,4 @@ aws cloudformation deploy \
   --template-file template.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --no-fail-on-empty-changeset \
-  --stack-name devops-advicemate-backend-dev
+  --stack-name advicemate-cfn-dev
