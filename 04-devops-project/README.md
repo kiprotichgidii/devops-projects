@@ -6,7 +6,7 @@
 
 ---
 
-## 📌 Overview
+### 📌 Overview
 
 This project showcases a **scalable Jenkins architecture** using:
 
@@ -15,7 +15,7 @@ This project showcases a **scalable Jenkins architecture** using:
 
 ---
 
-## 🏗️ Architecture
+### 🏗️ Architecture
 
 ```text
              Jenkins Master
@@ -25,7 +25,7 @@ This project showcases a **scalable Jenkins architecture** using:
 
 ---
 
-## 🧰 Tech Stack
+### 🧰 Tech Stack
 
 | Category | Tools |
 |--------|------|
@@ -35,7 +35,7 @@ This project showcases a **scalable Jenkins architecture** using:
 
 ---
 
-## 📂 Repository Structure
+### 📂 Repository Structure
 
 ```
 .
@@ -47,7 +47,7 @@ This project showcases a **scalable Jenkins architecture** using:
 
 ---
 
-## ⚙️ Pipeline Workflow
+### ⚙️ Pipeline Workflow
 
 1. Trigger via webhook  
 2. Assign agent  
@@ -55,7 +55,7 @@ This project showcases a **scalable Jenkins architecture** using:
 
 ---
 
-## 🔥 Key Features
+### 🔥 Key Features
 
 - Distributed builds  
 - Hybrid agent architecture  
@@ -64,7 +64,7 @@ This project showcases a **scalable Jenkins architecture** using:
 
 ---
 
-## 🧠 Concepts Covered
+### 🧠 Concepts Covered
 
 - Jenkins master-agent architecture  
 - Dynamic scaling  
@@ -72,7 +72,7 @@ This project showcases a **scalable Jenkins architecture** using:
 
 ---
 
-## 🔐 Security Considerations
+### 🔐 Security Considerations
 
 - Secure SSH agent connections  
 - Kubernetes RBAC  
@@ -80,14 +80,9 @@ This project showcases a **scalable Jenkins architecture** using:
 
 ---
 
-## 📈 Benefits
+### 📈 Benefits
 
 - Faster builds  
 - Scalable pipelines  
 - Reduced cost via ephemeral agents  
 
----
-
-## 💼 Resume Description
-
-> Designed a distributed Jenkins architecture using EC2-based static agents and Kubernetes-based dynamic agents to enable scalable CI/CD pipelines.
