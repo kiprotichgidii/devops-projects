@@ -7,24 +7,22 @@
 
 ---
 
-## 📌 Overview
+### 📌 Overview
 This project demonstrates a **production-grade DevOps pipeline** that provisions, configures, and deploys applications on AWS using:
 
 - **Terraform** → Infrastructure provisioning  
 - **Ansible** → Configuration management  
 - **Jenkins** → CI/CD orchestration  
 
----
 
-## 🏗️ Architecture
+### 🏗️ Architecture
 
 ```text
 GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 ```
 
----
 
-## 🧰 Tech Stack
+### 🧰 Tech Stack
 
 | Category | Tools |
 |--------|------|
@@ -34,9 +32,8 @@ GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 | Cloud | AWS (EC2, VPC, S3, DynamoDB) |
 | Containerization | Docker (optional) |
 
----
 
-## 📂 Repository Structure
+### 📂 Repository Structure
 
 ```
 .
@@ -48,9 +45,7 @@ GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 └── docs/
 ```
 
----
-
-## ⚙️ Pipeline Stages
+### ⚙️ Pipeline Stages
 
 1. Checkout code  
 2. Terraform init & validate  
@@ -60,18 +55,14 @@ GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 6. Ansible configuration  
 7. Application deployment  
 
----
-
-## 🔐 Security Best Practices
+### 🔐 Security Best Practices
 
 - No hardcoded credentials  
 - Jenkins credential store used  
 - Remote state in S3 with DynamoDB locking  
 - SSH keys securely managed  
 
----
-
-## 🔥 Key Features
+### 🔥 Key Features
 
 - Infrastructure as Code pipeline  
 - Manual approval gates  
@@ -79,24 +70,15 @@ GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 - Modular Terraform design  
 - Idempotent Ansible execution  
 
----
 
-## 🧠 Learning Outcomes
+### 🧠 Learning Outcomes
 
 - CI/CD for infrastructure  
 - Separation of concerns  
 - AWS automation workflows  
 
----
-
-## 📸 Future Improvements
+### 📸 Future Improvements
 
 - Multi-environment support  
 - Monitoring integration  
 - Rollback mechanisms  
-
----
-
-## 💼 Resume Description
-
-> Built a production-grade CI/CD pipeline using Jenkins, Terraform, and Ansible to automate AWS infrastructure provisioning and application deployment.
