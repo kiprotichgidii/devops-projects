@@ -14,13 +14,14 @@ This project demonstrates a **production-grade DevOps pipeline** that provisions
 - **Ansible** → Configuration management  
 - **Jenkins** → CI/CD orchestration  
 
+---
 
 ### 🏗️ Architecture
 
 ```text
 GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 ```
-
+---
 
 ### 🧰 Tech Stack
 
@@ -32,6 +33,7 @@ GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 | Cloud | AWS (EC2, VPC, S3, DynamoDB) |
 | Containerization | Docker (optional) |
 
+---
 
 ### 📂 Repository Structure
 
@@ -44,6 +46,7 @@ GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 ├── scripts/
 └── docs/
 ```
+---
 
 ### ⚙️ Pipeline Stages
 
@@ -55,12 +58,16 @@ GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 6. Ansible configuration  
 7. Application deployment  
 
+---
+
 ### 🔐 Security Best Practices
 
 - No hardcoded credentials  
 - Jenkins credential store used  
 - Remote state in S3 with DynamoDB locking  
 - SSH keys securely managed  
+
+---
 
 ### 🔥 Key Features
 
@@ -70,12 +77,15 @@ GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 - Modular Terraform design  
 - Idempotent Ansible execution  
 
+---
 
 ### 🧠 Learning Outcomes
 
 - CI/CD for infrastructure  
 - Separation of concerns  
 - AWS automation workflows  
+
+---
 
 ### 📸 Future Improvements
 
