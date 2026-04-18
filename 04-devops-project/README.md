@@ -1,28 +1,26 @@
-# ⚡ Distributed Jenkins with Static & Kubernetes Agents
+# 🚀 Jenkins + Terraform + Ansible CI/CD Pipeline
 
 ![CI](https://img.shields.io/badge/CI-Jenkins-blue)
+![IaC](https://img.shields.io/badge/IaC-Terraform-purple)
+![Config](https://img.shields.io/badge/Config-Ansible-red)
 ![Cloud](https://img.shields.io/badge/Cloud-AWS-orange)
-![Kubernetes](https://img.shields.io/badge/K8s-Enabled-green)
 
 ---
 
 ### 📌 Overview
+This project demonstrates a **production-grade DevOps pipeline** that provisions, configures, and deploys applications on AWS using:
 
-This project showcases a **scalable Jenkins architecture** using:
-
-- Static EC2-based agents  
-- Dynamic Kubernetes-based agents  
+- **Terraform** → Infrastructure provisioning  
+- **Ansible** → Configuration management  
+- **Jenkins** → CI/CD orchestration  
 
 ---
 
 ### 🏗️ Architecture
 
 ```text
-             Jenkins Master
-              /        \
-     EC2 Agents     Kubernetes Pods
+GitHub → Jenkins → Terraform → AWS Infra → Ansible → App Deployment
 ```
-
 ---
 
 ### 🧰 Tech Stack
@@ -30,8 +28,10 @@ This project showcases a **scalable Jenkins architecture** using:
 | Category | Tools |
 |--------|------|
 | CI/CD | Jenkins |
-| Cloud | AWS EC2 |
-| Orchestration | Kubernetes |
+| IaC | Terraform |
+| Config Mgmt | Ansible |
+| Cloud | AWS (EC2, VPC, S3, DynamoDB) |
+| Containerization | Docker (optional) |
 
 ---
 
@@ -40,49 +40,55 @@ This project showcases a **scalable Jenkins architecture** using:
 ```
 .
 ├── Jenkinsfile
-├── k8s/
+├── terraform/
+├── ansible/
+├── app/
 ├── scripts/
 └── docs/
 ```
+---
+
+### ⚙️ Pipeline Stages
+
+1. Checkout code  
+2. Terraform init & validate  
+3. Terraform plan  
+4. Manual approval  
+5. Terraform apply  
+6. Ansible configuration  
+7. Application deployment  
 
 ---
 
-### ⚙️ Pipeline Workflow
+### 🔐 Security Best Practices
 
-1. Trigger via webhook  
-2. Assign agent  
-3. Execute pipeline stages  
+- No hardcoded credentials  
+- Jenkins credential store used  
+- Remote state in S3 with DynamoDB locking  
+- SSH keys securely managed  
 
 ---
 
 ### 🔥 Key Features
 
-- Distributed builds  
-- Hybrid agent architecture  
-- Ephemeral Kubernetes agents  
-- Parallel execution  
+- Infrastructure as Code pipeline  
+- Manual approval gates  
+- Dynamic inventory (AWS EC2)  
+- Modular Terraform design  
+- Idempotent Ansible execution  
 
 ---
 
-### 🧠 Concepts Covered
+### 🧠 Learning Outcomes
 
-- Jenkins master-agent architecture  
-- Dynamic scaling  
-- Resource optimization  
-
----
-
-### 🔐 Security Considerations
-
-- Secure SSH agent connections  
-- Kubernetes RBAC  
-- Credential management  
+- CI/CD for infrastructure  
+- Separation of concerns  
+- AWS automation workflows  
 
 ---
 
-### 📈 Benefits
+### 📸 Future Improvements
 
-- Faster builds  
-- Scalable pipelines  
-- Reduced cost via ephemeral agents  
-
+- Multi-environment support  
+- Monitoring integration  
+- Rollback mechanisms  
