@@ -10,7 +10,7 @@ By running this project, you will have a dedicated Jenkins master server ready t
 2.  **Security Groups:** Opens Port `8080` for the Jenkins Web UI and Port `22` for SSH (Ansible access).
 3.  **Ansible Playbook:** Connects to the EC2 instance, installs Java, configures the Jenkins repository, installs Jenkins, and installs helpful worker tools like Terraform and the AWS CLI.
 
-## 🚀 How to Deploy Your Jenkins Server
+## 🚀 Deploy Jenkins Server
 
 ### 1. Provision the Infrastructure
 First, use Terraform to spin up the EC2 instance and Security Groups. This will also automatically generate a secure SSH key locally in your `03-devops-project/ansible` directory.
@@ -51,6 +51,3 @@ At the end of the run, there will be a `debug` task that prints:
 4. Create your first Admin User.
 5. Save and Finish!
 
-Your Jenkins server is now live and ready to be used as the orchestration engine for your next project. 
-
-*(Don't forget to run `terraform destroy` when you are done to save on AWS costs!)*
