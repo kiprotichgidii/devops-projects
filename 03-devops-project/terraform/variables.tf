@@ -7,5 +7,11 @@ variable "aws_region" {
 variable "project_name" {
   description = "Name of the project"
   type        = string
-  default     = "jenkins-pipeline"
+  default     = "jenkins-server"
+}
+
+variable "instance_type" {
+  description = "EC2 instance type (t3.small is recommended for Jenkins)"
+  type        = string
+  default     = "t3.small"
 }

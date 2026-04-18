@@ -1,26 +1,25 @@
 #!/bin/bash
 
 # This script generates an Ansible inventory.ini file by querying AWS 
-# for the public IPs of the instances spun up by Terraform.
+# for the public IP of the Jenkins server spun up by Terraform.
 
 INVENTORY_FILE="../ansible/inventory.ini"
 KEY_PATH="ansible-key.pem"
 
-echo "Generating Ansible Inventory from EC2 instances..."
+echo "Generating Ansible Inventory for Jenkins Server..."
 
-echo "[webservers]" > $INVENTORY_FILE
+echo "[jenkins]" > $INVENTORY_FILE
 
-# Get instances matching the project tag
-IPS=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=jenkins-pipeline-web" "Name=instance-state-name,Values=running" \
+# Get Jenkins instance IP
+JENKINS_IP=$(aws ec2 describe-instances \
+    --filters "Name=tag:Role,Values=jenkins-master" "Name=instance-state-name,Values=running" \
     --query "Reservations[*].Instances[*].PublicIpAddress" \
     --output text)
 
-for ip in $IPS; do
-  if [ "$ip" != "None" ] && [ -n "$ip" ]; then
-    echo "web_server_$ip ansible_host=$ip ansible_user=ubuntu ansible_ssh_private_key_file=$KEY_PATH ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> $INVENTORY_FILE
-  fi
-done
-
-echo "Done! Inventory saved to $INVENTORY_FILE"
-cat $INVENTORY_FILE
+if [ "$JENKINS_IP" != "None" ] && [ -n "$JENKINS_IP" ]; then
+  echo "jenkins_server ansible_host=$JENKINS_IP ansible_user=ubuntu ansible_ssh_private_key_file=$KEY_PATH ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> $INVENTORY_FILE
+  echo "Done! Inventory saved to $INVENTORY_FILE with IP: $JENKINS_IP"
+else
+  echo "Could not find a running Jenkins instance."
+  exit 1
+fi
