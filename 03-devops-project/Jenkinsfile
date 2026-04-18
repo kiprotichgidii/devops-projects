@@ -1,0 +1,121 @@
+pipeline {
+    agent any
+    
+    environment {
+        AWS_DEFAULT_REGION = 'us-east-1'
+        // This pipeline assumes you have AWS credentials stored in Jenkins 
+        // under "Manage Jenkins" -> "Credentials" with the ID 'aws-credentials'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Terraform Init & Validate') {
+            steps {
+                dir('03-devops-project/terraform') {
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding', 
+                        credentialsId: 'aws-credentials', 
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        sh 'terraform init'
+                        sh 'terraform validate'
+                    }
+                }
+            }
+        }
+        
+        stage('Terraform Plan') {
+            steps {
+                dir('03-devops-project/terraform') {
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding', 
+                        credentialsId: 'aws-credentials', 
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        sh 'terraform plan -out=tfplan'
+                    }
+                }
+            }
+        }
+        
+        stage('Approval') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    input message: 'Approve Terraform Apply?', ok: 'Yes, Deploy'
+                }
+            }
+        }
+        
+        stage('Terraform Apply') {
+            steps {
+                dir('03-devops-project/terraform') {
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding', 
+                        credentialsId: 'aws-credentials', 
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        sh 'terraform apply -auto-approve tfplan'
+                    }
+                }
+            }
+        }
+        
+        stage('Wait for EC2 Initialization') {
+            steps {
+                sh 'echo "Waiting 60 seconds for EC2 instance to boot up..."'
+                sh 'sleep 60'
+            }
+        }
+        
+        stage('Generate Ansible Inventory') {
+            steps {
+                dir('03-devops-project/scripts') {
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding', 
+                        credentialsId: 'aws-credentials', 
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        sh 'chmod +x generate-inventory.sh'
+                        sh './generate-inventory.sh'
+                    }
+                }
+            }
+        }
+        
+        stage('Ansible Deployment') {
+            steps {
+                dir('03-devops-project/ansible') {
+                    // Disable StrictHostKeyChecking for non-interactive SSH
+                    sh '''
+                        mkdir -p ~/.ssh
+                        echo "StrictHostKeyChecking no" > ~/.ssh/config
+                        echo "UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+                        chmod 400 ansible-key.pem || true
+                    '''
+                    sh 'ansible-playbook -i inventory.ini deploy-app.yaml'
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "Pipeline completed successfully! 🎉"
+        }
+        failure {
+            echo "Pipeline failed. Check the logs. ❌"
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

@@ -1,0 +1,28 @@
+---
+- name: Configure Web Server and Deploy App
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present
+
+    - name: Ensure NGINX is running and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Copy App files to NGINX root
+      copy:
+        src: ../app/index.html
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
