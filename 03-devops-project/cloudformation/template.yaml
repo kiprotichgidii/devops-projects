@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Jenkins Server Deployment
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: jenkins-server
+    Description: Name of the project
+  InstanceType:
+    Type: String
+    Default: t3.small
+    Description: EC2 instance type
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC ID to deploy the resources into (select default VPC)
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The Subnet ID for the Jenkins EC2 instance
+
+Resources:
+  JenkinsKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub "${ProjectName}-key-${AWS::StackName}"
+      KeyType: rsa
+
+  JenkinsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow Jenkins (8080) and SSH (22)
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-sg"
+
+  JenkinsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: '{{resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id}}'
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref JenkinsKeyPair
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: '0'
+          GroupSet:
+            - !Ref JenkinsSecurityGroup
+          SubnetId: !Ref SubnetId
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-instance"
+        - Key: Role
+          Value: jenkins-master
+
+Outputs:
+  JenkinsPublicIp:
+    Description: Public IP of the Jenkins server
+    Value: !GetAtt JenkinsInstance.PublicIp
+  JenkinsUrl:
+    Description: The URL to access the Jenkins web interface
+    Value: !Sub "http://${JenkinsInstance.PublicIp}:8080"
+  KeyPairId:
+    Description: The ID of the generated EC2 Key Pair
+    Value: !GetAtt JenkinsKeyPair.KeyPairId
