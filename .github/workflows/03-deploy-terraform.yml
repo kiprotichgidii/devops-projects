@@ -1,0 +1,93 @@
+name: Deploy Jenkins CI/CD Server
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - '03-devops-project/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        working-directory: 03-devops-project/terraform
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        working-directory: 03-devops-project/terraform
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: 03-devops-project/terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: 03-devops-project/terraform
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: 03-devops-project/terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Wait for EC2 Instance to initialize
+        run: |
+          echo "Waiting 60 seconds for the Jenkins EC2 instance to boot up..."
+          sleep 60
+
+      - name: Generate Ansible Inventory
+        working-directory: 03-devops-project/scripts
+        run: |
+          chmod +x generate-inventory.sh
+          ./generate-inventory.sh
+
+      - name: Setup Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      # - name: Disable strict host key checking for Ansible
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     echo "Host *" > ~/.ssh/config
+      #     echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+      #     echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+      #     chmod 400 ~/.ssh/config
+
+      - name: Ensure correct permissions for SSH key
+        working-directory: 03-devops-project/ansible
+        run: chmod 400 ansible-key.pem
+
+      - name: Install and Configure Jenkins
+        working-directory: 03-devops-project/ansible
+        run: ansible-playbook -i inventory.ini install-jenkins.yaml
+
+      - name: Output Jenkins Server URL
+        working-directory: 03-devops-project/terraform
+        run: |
+          JENKINS_URL=$(terraform output -raw jenkins_url)
+          echo "🚀 Jenkins is live at: $JENKINS_URL"
+          echo "Please check the Ansible deployment logs above for your initialAdminPassword!"
+
+      - name: Upload SSH Key Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jenkins-server-private-key
+          path: 03-devops-project/ansible/ansible-key.pem
+          retention-days: 3

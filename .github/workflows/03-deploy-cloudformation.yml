@@ -1,0 +1,108 @@
+name: Deploy Jenkins CI/CD Server
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - '03-devops-project/cloudformation/**'
+  #     - '03-devops-project/ansible/**'
+  #     - '03-devops-project/scripts/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Get Default VPC and Subnet
+        id: vpc_info
+        run: |
+          VPC_ID=$(aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
+          echo "vpc_id=$VPC_ID" >> $GITHUB_OUTPUT
+          
+          # Get the first subnet
+          SUBNET_ID=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" --query "Subnets[0].SubnetId" --output text)
+          echo "subnet_id=$SUBNET_ID" >> $GITHUB_OUTPUT
+
+      - name: Deploy CloudFormation Stack
+        working-directory: 03-devops-project/cloudformation
+        run: |
+          aws cloudformation deploy \
+            --template-file template.yaml \
+            --stack-name jenkins-server-cfn \
+            --parameter-overrides VpcId=${{ steps.vpc_info.outputs.vpc_id }} SubnetId=${{ steps.vpc_info.outputs.subnet_id }} \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset
+
+      - name: Retrieve Private Key from SSM
+        run: |
+          KEY_PAIR_ID=$(aws cloudformation describe-stacks \
+            --stack-name jenkins-server-cfn \
+            --query "Stacks[0].Outputs[?OutputKey=='KeyPairId'].OutputValue" \
+            --output text)
+            
+          mkdir -p 03-devops-project/ansible
+          aws ssm get-parameter \
+            --name "/ec2/keypair/$KEY_PAIR_ID" \
+            --with-decryption \
+            --query "Parameter.Value" \
+            --output text > 03-devops-project/ansible/ansible-key.pem
+
+      - name: Wait for EC2 Instance to initialize
+        run: |
+          echo "Waiting 60 seconds for the Jenkins EC2 instance to boot up..."
+          sleep 60
+
+      - name: Generate Ansible Inventory
+        working-directory: 03-devops-project/scripts
+        run: |
+          chmod +x generate-inventory.sh
+          ./generate-inventory.sh
+
+      - name: Setup Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      # - name: Disable strict host key checking for Ansible
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     echo "Host *" > ~/.ssh/config
+      #     echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+      #     echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+      #     chmod 400 ~/.ssh/config
+
+      - name: Ensure correct permissions for SSH key
+        working-directory: 03-devops-project/ansible
+        run: chmod 400 ansible-key.pem
+
+      - name: Install and Configure Jenkins
+        working-directory: 03-devops-project/ansible
+        run: ansible-playbook -i inventory.ini install-jenkins.yaml
+
+      - name: Output Jenkins Server URL
+        run: |
+          JENKINS_URL=$(aws cloudformation describe-stacks \
+            --stack-name jenkins-server-cfn \
+            --query "Stacks[0].Outputs[?OutputKey=='JenkinsUrl'].OutputValue" \
+            --output text)
+          echo "🚀 Jenkins is live at: $JENKINS_URL"
+          echo "Please check the Ansible deployment logs above for your initialAdminPassword!"
+
+      - name: Upload SSH Key Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jenkins-server-private-key-cfn
+          path: 03-devops-project/ansible/ansible-key.pem
+          retention-days: 3
