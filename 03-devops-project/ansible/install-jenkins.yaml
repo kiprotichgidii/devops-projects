@@ -63,7 +63,7 @@
       args:
         creates: /usr/bin/terraform
 
-    - name: Install AWS CLI (Optional but useful)
+    - name: Install AWS CLI
       shell: |
         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
         unzip -q awscliv2.zip
