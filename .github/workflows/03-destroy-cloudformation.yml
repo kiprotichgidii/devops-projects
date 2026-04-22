@@ -1,0 +1,48 @@
+name: Cleanup Jenkins CloudFormation Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      stack_name:
+        description: 'CloudFormation Stack Name'
+        required: true
+        default: 'jenkins-server-cfn'
+      aws_region:
+        description: 'AWS Region'
+        required: true
+        default: 'us-east-1'
+      confirm_destroy:
+        description: 'Type "destroy" to confirm you want to delete all resources'
+        required: true
+        default: ''
+
+env:
+  AWS_REGION: ${{ inputs.aws_region }}
+  STACK_NAME: ${{ inputs.stack_name }}
+
+jobs:
+  delete-stack:
+    name: Delete CloudFormation Stack
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm_destroy == 'destroy'
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Delete CloudFormation Stack
+        run: |
+          echo "Initiating deletion of CloudFormation stack: ${{ env.STACK_NAME }}"
+          aws cloudformation delete-stack --stack-name ${{ env.STACK_NAME }}
+          
+          echo "Waiting for stack deletion to complete..."
+          aws cloudformation wait stack-delete-complete --stack-name ${{ env.STACK_NAME }}
+          
+          echo "Stack deleted successfully!"
