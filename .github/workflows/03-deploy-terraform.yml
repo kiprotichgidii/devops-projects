@@ -1,4 +1,4 @@
-name: Deploy Jenkins CI/CD Server with Terraform
+name: Deploy Jenkins Server with Terraform
 
 on:
   # push:
