@@ -36,9 +36,9 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        working-directory: terraform
+        working-directory: 03-devops-project/terraform
         run: terraform init
 
       - name: Terraform Destroy
-        working-directory: terraform
-        run: terraform destroy -auto-approve -var="aws_region=${{ env.AWS_REGION }}"
+        working-directory: 03-devops-project/terraform
+        run: terraform destroy -auto-approve
