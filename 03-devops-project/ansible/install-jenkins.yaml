@@ -3,70 +3,121 @@
   hosts: jenkins
   become: yes
   tasks:
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
+    - name: Debian and derivatives
+      when: ansible_os_family == 'Debian'
+      block:
+        - name: Update apt cache
+          ansible.builtin.apt:
+            update_cache: yes
+            cache_valid_time: 3600
 
-    - name: Install dependencies (Java, Git, curl, unzip)
-      apt:
-        name:
-          - openjdk-21-jre
-          - git
-          - curl
-          - unzip
-        state: present
+        - name: Install dependencies (Java, Git, curl, unzip, wget)
+          ansible.builtin.apt:
+            name:
+              - openjdk-21-jre
+              - git
+              - curl
+              - unzip
+              - wget
+            state: present
 
-    - name: Add Jenkins repository key
-      get_url:
-        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
-        dest: /etc/apt/keyrings/jenkins-keyring.asc
+        - name: Add Jenkins repository key
+          ansible.builtin.get_url:
+            url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+            dest: /etc/apt/keyrings/jenkins-keyring.asc
 
-    - name: Add Jenkins repository
-      apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
-        state: present
-        update_cache: yes
+        - name: Add Jenkins repository
+          ansible.builtin.apt_repository:
+            repo: "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+            state: present
+            update_cache: yes
 
-    - name: Install Jenkins
-      apt:
-        name: jenkins
-        state: present
+        - name: Install Jenkins
+          ansible.builtin.apt:
+            name: jenkins
+            state: present
 
-    - name: Start and enable Jenkins service
-      systemd:
-        name: jenkins
-        state: started
-        enabled: yes
+        - name: Install Terraform
+          ansible.builtin.shell: |
+            wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+            sudo apt update && sudo apt install terraform
+          args:
+            creates: /usr/bin/terraform
 
-    - name: Wait for Jenkins initial admin password file to be created
-      wait_for:
-        path: /var/lib/jenkins/secrets/initialAdminPassword
-        state: present
-        delay: 5
-        timeout: 60
+    - name: Red Hat Enterprise Linux and derivatives
+      when: ansible_os_family == 'RedHat'
+      block:
+        - name: Update YUM cache
+          ansible.builtin.yum:
+            update_cache: yes
+            cache_valid_time: 3600
+          become: yes
 
-    - name: Retrieve Jenkins initial admin password
-      command: cat /var/lib/jenkins/secrets/initialAdminPassword
-      register: jenkins_admin_password
-      changed_when: false
+        - name: Install dependencies (Java, Git, curl, unzip, wget, yum-utils)
+          ansible.builtin.yum:
+            name:
+              - java-21-openjdk
+              - git
+              - curl
+              - unzip
+              - wget
+              - yum-utils
+            state: present
 
-    - name: Display Jenkins Admin Password
-      debug:
-        msg: "The initial Jenkins admin password is: {{ jenkins_admin_password.stdout }}"
+        - name: Add Jenkins repository
+          ansible.builtin.get_url:
+            url: https://pkg.jenkins.io/rpm-stable/jenkins.repo
+            dest: /etc/yum.repos.d/jenkins.repo
 
-    - name: Install Terraform
-      shell: |
-        wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-        sudo apt update && sudo apt install terraform
-      args:
-        creates: /usr/bin/terraform
+        - name: Import Jenkins GPG key
+          ansible.builtin.rpm_key:
+            state: present
+            key: https://pkg.jenkins.io/rpm-stable/repodata/repomd.xml.key
 
-    - name: Install AWS CLI
-      shell: |
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip -q awscliv2.zip
-        sudo ./aws/install
-      args:
-        creates: /usr/local/bin/aws
+        - name: Install Jenkins
+          ansible.builtin.yum:
+            name: jenkins
+            state: present
+
+        - name: Add Hashicorp repository
+          ansible.builtin.command: yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+          args:
+            creates: /etc/yum.repos.d/hashicorp.repo
+
+        - name: Install Terraform
+          ansible.builtin.yum:
+            name: terraform
+            state: present
+
+    - name: Common Jenkins setup and services
+      block:
+        - name: Start and enable Jenkins service
+          ansible.builtin.systemd:
+            name: jenkins
+            state: started
+            enabled: yes
+
+        - name: Wait for Jenkins initial admin password file to be created
+          ansible.builtin.wait_for:
+            path: /var/lib/jenkins/secrets/initialAdminPassword
+            state: present
+            delay: 5
+            timeout: 60
+
+        - name: Retrieve Jenkins initial admin password
+          ansible.builtin.command: cat /var/lib/jenkins/secrets/initialAdminPassword
+          register: jenkins_admin_password
+          changed_when: false
+
+        - name: Display Jenkins Admin Password
+          ansible.builtin.debug:
+            msg: "The initial Jenkins admin password is: {{ jenkins_admin_password.stdout }}"
+
+        - name: Install AWS CLI
+          ansible.builtin.shell: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install
+          args:
+            creates: /usr/local/bin/aws
