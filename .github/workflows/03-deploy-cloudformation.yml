@@ -1,4 +1,4 @@
-name: CloudFormation Deploy Jenkins CI/CD Server
+name: Deploy Jenkins CI/CD Server with CloudFormation
 
 on:
   # push:
