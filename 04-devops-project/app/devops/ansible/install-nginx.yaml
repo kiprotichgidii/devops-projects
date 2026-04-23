@@ -1,0 +1,24 @@
+---
+- name: Install NGINX
+  hosts: all
+  become: true
+  tasks:
+    - name: Install NGINX (Debian)
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install NGINX (RedHat)
+      dnf:
+        name: nginx
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Ensure NGINX is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes
