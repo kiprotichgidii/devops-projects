@@ -52,7 +52,6 @@
           ansible.builtin.yum:
             update_cache: yes
             cache_valid_time: 3600
-          become: yes
 
         - name: Install dependencies (Java, Git, curl, unzip, wget, yum-utils)
           ansible.builtin.yum:
