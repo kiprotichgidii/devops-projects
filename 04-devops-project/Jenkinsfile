@@ -16,7 +16,7 @@ pipeline {
         
         stage('Terraform Init & Validate') {
             steps {
-                dir('03-devops-project/terraform') {
+                dir('04-devops-project/terraform') {
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding', 
                         credentialsId: 'aws-credentials', 
@@ -32,7 +32,7 @@ pipeline {
         
         stage('Terraform Plan') {
             steps {
-                dir('03-devops-project/terraform') {
+                dir('04-devops-project/terraform') {
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding', 
                         credentialsId: 'aws-credentials', 
@@ -55,7 +55,7 @@ pipeline {
         
         stage('Terraform Apply') {
             steps {
-                dir('03-devops-project/terraform') {
+                dir('04-devops-project/terraform') {
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding', 
                         credentialsId: 'aws-credentials', 
@@ -77,7 +77,7 @@ pipeline {
         
         stage('Generate Ansible Inventory') {
             steps {
-                dir('03-devops-project/scripts') {
+                dir('04-devops-project/app/devops/scripts') {
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding', 
                         credentialsId: 'aws-credentials', 
@@ -93,7 +93,7 @@ pipeline {
         
         stage('Ansible Deployment') {
             steps {
-                dir('03-devops-project/ansible') {
+                dir('04-devops-project/app/devops/ansible') {
                     // Disable StrictHostKeyChecking for non-interactive SSH
                     sh '''
                         mkdir -p ~/.ssh
