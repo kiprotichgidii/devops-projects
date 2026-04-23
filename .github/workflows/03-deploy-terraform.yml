@@ -46,9 +46,9 @@ jobs:
         working-directory: 03-devops-project/terraform
         run: terraform apply -auto-approve tfplan
 
-      - name: Wait for EC2 Instance to initialize
+      - name: Wait for EC2 Instances to initialize
         run: |
-          echo "Waiting 60 seconds for the Jenkins EC2 instance to boot up..."
+          echo "Waiting 60 seconds for the Jenkins EC2 instances to boot up..."
           sleep 60
 
       - name: Generate Ansible Inventory
@@ -70,11 +70,17 @@ jobs:
         working-directory: 03-devops-project/ansible
         run: ansible-playbook -i inventory.ini install-jenkins.yaml
 
-      - name: Output Jenkins Server URL
+      - name: Install and Configure Jenkins Agent
+        working-directory: 03-devops-project/ansible
+        run: ansible-playbook -i inventory.ini install-jenkins-agent.yaml
+
+      - name: Output Jenkins Info
         working-directory: 03-devops-project/terraform
         run: |
           JENKINS_URL=$(terraform output -raw jenkins_url)
+          AGENT_IP=$(terraform output -raw jenkins_agent_public_ip)
           echo "🚀 Jenkins is live at: $JENKINS_URL"
+          echo "🤖 Jenkins Agent IP: $AGENT_IP"
           echo "Please check the Ansible deployment logs above for your initialAdminPassword!"
 
       - name: Upload SSH Key Artifact

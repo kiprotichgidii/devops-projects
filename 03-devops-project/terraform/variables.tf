@@ -15,3 +15,9 @@ variable "instance_type" {
   type        = string
   default     = "t3.small"
 }
+
+variable "agent_instance_type" {
+  description = "EC2 instance type for Jenkins agent"
+  type        = string
+  default     = "t3.small"
+}

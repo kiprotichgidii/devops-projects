@@ -120,3 +120,15 @@
             sudo ./aws/install
           args:
             creates: /usr/local/bin/aws
+
+        - name: Ensure Python 3 and Pip are installed
+          ansible.builtin.package:
+            name: 
+              - python3
+              - python3-pip
+            state: present
+
+        - name: Install Ansible via Pip
+          ansible.builtin.pip:
+            name: ansible
+            state: latest
