@@ -3,8 +3,6 @@ pipeline {
     
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
-        // This pipeline assumes you have AWS credentials stored in Jenkins 
-        // under "Manage Jenkins" -> "Credentials" with the ID 'aws-credentials'
     }
     
     stages {
