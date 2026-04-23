@@ -90,17 +90,18 @@ pipeline {
                 }
             }
         }
-        
-        stage('Ansible Deployment') {
+
+        stage('Install NGINX') {
             steps {
                 dir('04-devops-project/app/devops/ansible') {
-                    // Disable StrictHostKeyChecking for non-interactive SSH
-                    sh '''
-                        mkdir -p ~/.ssh
-                        echo "StrictHostKeyChecking no" > ~/.ssh/config
-                        echo "UserKnownHostsFile=/dev/null" >> ~/.ssh/config
-                        chmod 400 ansible-key.pem || true
-                    '''
+                    sh 'ansible-playbook -i inventory.ini install-nginx.yaml'
+                }
+            }
+        }
+        
+        stage('Deploy Web Application') {
+            steps {
+                dir('04-devops-project/app/devops/ansible') {
                     sh 'ansible-playbook -i inventory.ini deploy-app.yaml'
                 }
             }
