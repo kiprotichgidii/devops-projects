@@ -1,54 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jenkins CI/CD Deployment</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            text-align: center;
-            padding: 50px;
-        }
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            max-width: 600px;
-            margin: auto;
-        }
-        h1 {
-            color: #d32f2f;
-        }
-        .badges {
-            margin: 20px 0;
-        }
-        .badges span {
-            background: #e0e0e0;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            margin: 5px;
-            display: inline-block;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="description" content="Advice generator app - Frontend Mentor">
+  <meta name="keywords" content="Advice generator app, Frontend Mentor">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+
+  <title>Frontend Mentor | Advice generator app</title>
+
 </head>
+
 <body>
-    <div class="container">
-        <h1>🚀 Successfully Deployed!</h1>
-        <p>This application was provisioned via Terraform, configured via Ansible, and orchestrated entirely by a Jenkins CI/CD pipeline.</p>
-        
-        <div class="badges">
-            <span>Jenkins</span>
-            <span>Terraform</span>
-            <span>Ansible</span>
-            <span>AWS EC2</span>
-        </div>
-        
-        <p>Great job on completing Project 03!</p>
+  <!-- Main Container -->
+  <main class="main-container">
+    <p class="advice-number">Advice # 117</p>
+    <!-- Quote -->
+    <q class="quotes">It is easy to sit up and take notice, what's difficult is getting up and taking
+      action.</q>
+    <!-- Line Section -->
+    <div class="line">
+      <div class="line-image">
+      </div>
     </div>
+    <!-- Dice BTN -->
+    <div class="button-section">
+
+      <div class="dice-img"></div>
+    </div>
+
+  </main>
+  <script src="app.js"></script>
 </body>
+
 </html>
