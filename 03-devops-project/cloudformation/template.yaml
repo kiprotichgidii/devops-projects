@@ -65,6 +65,29 @@ Resources:
         - Key: Role
           Value: jenkins-master
 
+  JenkinsAgentInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: '{{resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id}}'
+      InstanceType: !Ref AgentInstanceType
+      KeyName: !Ref JenkinsKeyPair
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: '0'
+          GroupSet:
+            - !Ref JenkinsSecurityGroup
+          SubnetId: !Ref SubnetId
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-agent-instance"
+        - Key: Role
+          Value: jenkins-agent
+
 Outputs:
   JenkinsPublicIp:
     Description: Public IP of the Jenkins server
