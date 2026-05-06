@@ -92,7 +92,7 @@ Once Jenkins is running, you can connect it to your GitHub repository to automat
 7. Ensure the **Script Path** points to your Jenkinsfile (e.g., `03-devops-project/Jenkinsfile`).
 8. Click **Save**.
 
-### 5. Set up Webhooks (To trigger builds automatically)
+### 5. Set up Webhooks (Automatic Pipeline Triggers)
 To make Jenkins run a build every time you push code, configure a webhook.
 
 **In Jenkins:**
