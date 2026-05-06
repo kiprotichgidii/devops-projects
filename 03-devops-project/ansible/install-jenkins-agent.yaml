@@ -101,23 +101,16 @@
           args:
             creates: /usr/local/bin/aws
 
-        - name: Ensure Python 3 and Pip are installed (Debian)
+        - name: Setup Ansible (Debian)
           ansible.builtin.apt:
             name: 
-              - python3
-              - python3-pip
+              - python3-ansible
             state: present
           when: ansible_os_family == 'Debian'
 
-        - name: Ensure Python 3 and Pip are installed (RedHat)
+        - name: Setup Ansible (RedHat)
           ansible.builtin.yum:
             name: 
-              - python3
-              - python3-pip
+              - python3-ansible
             state: present
           when: ansible_os_family == 'RedHat'
-
-        - name: Install Ansible via Pip
-          ansible.builtin.pip:
-            name: ansible
-            state: latest

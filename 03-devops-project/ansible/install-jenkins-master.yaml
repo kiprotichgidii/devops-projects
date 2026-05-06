@@ -45,6 +45,13 @@
           args:
             creates: /usr/bin/terraform
 
+        - name: Setup Ansible
+          ansible.builtin.shell: |
+            sudo apt update
+            sudo apt install -y python3-ansible
+          args:
+            creates: /usr/bin/ansible
+
     - name: Red Hat Enterprise Linux and derivatives
       when: ansible_os_family == 'RedHat'
       block:
@@ -89,6 +96,13 @@
             name: terraform
             state: present
 
+        - name: Setup Ansible
+          ansible.builtin.shell: |
+            sudo yum update
+            sudo yum install -y python3-ansible
+          args:
+            creates: /usr/bin/ansible
+
     - name: Common Jenkins setup and services
       block:
         - name: Start and enable Jenkins service
@@ -120,15 +134,4 @@
             sudo ./aws/install
           args:
             creates: /usr/local/bin/aws
-
-        - name: Ensure Python 3 and Pip are installed
-          ansible.builtin.package:
-            name: 
-              - python3
-              - python3-pip
-            state: present
-
-        - name: Install Ansible via Pip
-          ansible.builtin.pip:
-            name: ansible
-            state: latest
+            
