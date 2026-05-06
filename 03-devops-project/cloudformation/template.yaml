@@ -9,7 +9,11 @@ Parameters:
   InstanceType:
     Type: String
     Default: t3.small
-    Description: EC2 instance type
+    Description: EC2 instance type for Jenkins Master
+  AgentInstanceType:
+    Type: String
+    Default: c7i-flex.large
+    Description: EC2 instance type for Jenkins Agent
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: The VPC ID to deploy the resources into (select default VPC)
