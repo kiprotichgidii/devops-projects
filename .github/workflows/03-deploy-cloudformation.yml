@@ -79,9 +79,9 @@ jobs:
         working-directory: 03-devops-project/ansible
         run: chmod 400 ansible-key.pem
 
-      - name: Install and Configure Jenkins
+      - name: Install and Configure Jenkins Master
         working-directory: 03-devops-project/ansible
-        run: ansible-playbook -i inventory.ini install-jenkins.yaml
+        run: ansible-playbook -i inventory.ini install-jenkins-master.yaml
 
       - name: Install and Configure Jenkins Agent
         working-directory: 03-devops-project/ansible
