@@ -46,11 +46,10 @@
             creates: /usr/bin/terraform
 
         - name: Setup Ansible
-          ansible.builtin.shell: |
-            sudo apt update
-            sudo apt install -y python3-ansible
-          args:
-            creates: /usr/bin/ansible
+          ansible.builtin.apt:
+            name: python3-ansible
+            state: present
+            update_cache: yes
 
     - name: Red Hat Enterprise Linux and derivatives
       when: ansible_os_family == 'RedHat'
@@ -97,11 +96,10 @@
             state: present
 
         - name: Setup Ansible
-          ansible.builtin.shell: |
-            sudo yum update
-            sudo yum install -y python3-ansible
-          args:
-            creates: /usr/bin/ansible
+          ansible.builtin.yum:
+            name: python3-ansible
+            state: present
+            update_cache: yes
 
     - name: Common Jenkins setup and services
       block:
@@ -134,4 +132,3 @@
             sudo ./aws/install
           args:
             creates: /usr/local/bin/aws
-            
