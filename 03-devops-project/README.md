@@ -13,7 +13,7 @@ By running this project, you will have a dedicated Jenkins master server ready t
 ## 🚀 Deploy Jenkins Server
 
 ### 1. Provision the Infrastructure
-First, use Terraform to spin up the EC2 instance and Security Groups. This will also automatically generate a secure SSH key locally in your `03-devops-project/ansible` directory.
+First, use Terraform to spin up the EC2 instances and Security Groups. This will also automatically generate a secure SSH key locally in your `03-devops-project/ansible` directory.
 
 ```bash
 cd terraform
@@ -21,10 +21,10 @@ terraform init
 terraform apply
 ```
 
-After it finishes, take note of the `jenkins_url` output (e.g., `http://3.80.x.x:8080`).
+After it finishes, take note of the `jenkins_url` and `jenkins_agent_public_ip` outputs.
 
 ### 2. Generate the Ansible Inventory
-Wait a minute or two for the EC2 instance to fully boot up, then run the dynamic inventory script.
+Wait a minute or two for the EC2 instances to fully boot up, then run the dynamic inventory script.
 
 ```bash
 cd ../scripts
@@ -32,15 +32,19 @@ chmod +x generate-inventory.sh
 ./generate-inventory.sh
 ```
 
-### 3. Install and Configure Jenkins
-Run the Ansible playbook. This will SSH into your new EC2 instance, install Jenkins, and print out your initial admin password!
+### 3. Install and Configure Jenkins Master and Agent
+Run the Ansible playbooks. This will SSH into your new EC2 instances to set up the Master and the Agent.
 
 ```bash
 cd ../ansible
+# Configure Master
 ansible-playbook -i inventory.ini install-jenkins.yaml
+
+# Configure Agent
+ansible-playbook -i inventory.ini install-jenkins-agent.yaml
 ```
 
-**Look carefully at the Ansible output!** 
+**Look carefully at the Master playbook output!** 
 At the end of the run, there will be a `debug` task that prints:
 > `"The initial Jenkins admin password is: [YOUR_PASSWORD_HERE]"`
 
@@ -104,4 +108,6 @@ To make Jenkins run a build every time you push code, configure a webhook.
 
 ### 6. Test the Integration
 Push a commit to your repository. Your Jenkins pipeline should automatically trigger and execute your `Jenkinsfile`.
+
+nkins pipeline should automatically trigger and execute your `Jenkinsfile`.
 
