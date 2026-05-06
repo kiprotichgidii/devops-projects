@@ -59,9 +59,9 @@ jobs:
             --query "Parameter.Value" \
             --output text > 03-devops-project/ansible/ansible-key.pem
 
-      - name: Wait for EC2 Instance to initialize
+      - name: Wait for EC2 Instances to initialize
         run: |
-          echo "Waiting 60 seconds for the Jenkins EC2 instance to boot up..."
+          echo "Waiting 60 seconds for the Jenkins EC2 instances to boot up..."
           sleep 60
 
       - name: Generate Ansible Inventory
@@ -83,13 +83,22 @@ jobs:
         working-directory: 03-devops-project/ansible
         run: ansible-playbook -i inventory.ini install-jenkins.yaml
 
-      - name: Output Jenkins Server URL
+      - name: Install and Configure Jenkins Agent
+        working-directory: 03-devops-project/ansible
+        run: ansible-playbook -i inventory.ini install-jenkins-agent.yaml
+
+      - name: Output Jenkins Info
         run: |
           JENKINS_URL=$(aws cloudformation describe-stacks \
             --stack-name jenkins-server-cfn \
             --query "Stacks[0].Outputs[?OutputKey=='JenkinsUrl'].OutputValue" \
             --output text)
+          AGENT_IP=$(aws cloudformation describe-stacks \
+            --stack-name jenkins-server-cfn \
+            --query "Stacks[0].Outputs[?OutputKey=='JenkinsAgentPublicIp'].OutputValue" \
+            --output text)
           echo "🚀 Jenkins is live at: $JENKINS_URL"
+          echo "🤖 Jenkins Agent IP: $AGENT_IP"
           echo "Please check the Ansible deployment logs above for your initialAdminPassword!"
 
       - name: Upload SSH Key Artifact
