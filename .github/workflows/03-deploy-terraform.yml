@@ -9,7 +9,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-jenkins:
+    name: Deploy Jenkins Server
     runs-on: ubuntu-latest
     
     steps:
