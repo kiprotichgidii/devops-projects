@@ -5,7 +5,7 @@
   vars:
     jenkins_agent_user: jenkins
     jenkins_agent_home: /home/jenkins
-  
+
   tasks:
     - name: Debian and derivatives
       when: ansible_os_family == 'Debian'
@@ -15,7 +15,7 @@
             update_cache: yes
             cache_valid_time: 3600
 
-        - name: Install dependencies (Java, Git, curl, unzip, wget)
+        - name: Install dependencies
           ansible.builtin.apt:
             name:
               - openjdk-21-jre
@@ -23,18 +23,65 @@
               - curl
               - unzip
               - wget
+              - gnupg
+              - apt-transport-https
+              - software-properties-common
+              - ca-certificates
             state: present
+        
+        - name: Uninstall old Docker version
+          ansible.builtin.apt:
+            name:
+              - docker.io
+              - docker-compose
+              - docker-compose-v2
+              - docker-doc
+              - podman-docker
+              - containerd
+              - runc
+            state: absent
+            purge: yes
+            autoremove: yes
+        
+        - name: Ensure apt keyrings directory exists
+          ansible.builtin.file:
+            path: /etc/apt/keyrings
+            state: directory
+            mode: '0755'
+
+        - name: Add Docker GPG key
+          ansible.builtin.get_url:
+            url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+            dest: /etc/apt/keyrings/docker.asc
+
+        - name: Add Docker repository
+          ansible.builtin.apt_repository:
+            repo:
+              "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+            state: present
+            filename: docker
+
+        - name: Install Docker Packages
+          ansible.builtin.apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: present
+            update_cache: yes
 
     - name: Red Hat Enterprise Linux and derivatives
       when: ansible_os_family == 'RedHat'
       block:
-        - name: Update yum cache
-          ansible.builtin.yum:
+        - name: Update dnf cache
+          ansible.builtin.dnf:
             update_cache: yes
             cache_valid_time: 3600
 
-        - name: Install dependencies (Java, Git, curl, unzip, wget)
-          ansible.builtin.yum:
+        - name: Install dependencies
+          ansible.builtin.dnf:
             name:
               - java-21-openjdk
               - git
@@ -42,6 +89,43 @@
               - unzip
               - wget
             state: present
+        
+        - name: Remove Old Docker Versions
+          ansible.builtin.dnf:
+            name:
+              - docker-client
+              - docker-client-latest
+              - docker-common
+              - docker-latest
+              - docker-latest-logrotate
+              - docker-logrotate
+              - docker-engine
+            state: absent
+
+        - name: Setup the repo
+          ansible.builtin.dnf:
+            name: dnf-plugins-core
+            state: present
+
+        - name: Add Docker CE repository
+          ansible.builtin.yum_repository:
+            name: docker-ce-stable
+            description: Docker CE Stable - $basearch
+            baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
+            enabled: yes
+            gpgcheck: yes
+            gpgkey: https://download.docker.com/linux/centos/gpg
+
+        - name: Install Docker Packages
+          ansible.builtin.dnf:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: present
+            update_cache: yes
 
     - name: Common Jenkins Agent setup
       block:
@@ -54,6 +138,8 @@
           ansible.builtin.user:
             name: "{{ jenkins_agent_user }}"
             group: "{{ jenkins_agent_user }}"
+            groups: docker
+            append: yes
             home: "{{ jenkins_agent_home }}"
             shell: /bin/bash
             create_home: yes
@@ -80,6 +166,12 @@
             group: "{{ jenkins_agent_user }}"
             mode: '0755'
 
+        - name: Start and enable Docker service
+          ansible.builtin.systemd:
+            name: docker
+            state: started
+            enabled: yes
+
         - name: Install Terraform
           ansible.builtin.shell: |
             if [ -f /etc/debian_version ]; then
@@ -87,17 +179,20 @@
               echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
               sudo apt update && sudo apt install terraform
             elif [ -f /etc/redhat-release ]; then
-              sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
-              sudo yum install -y terraform
+              sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+              sudo dnf install -y terraform
             fi
           args:
             creates: /usr/bin/terraform
 
         - name: Install AWS CLI
           ansible.builtin.shell: |
+            tmp_dir=$(mktemp -d)
+            cd "$tmp_dir"
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip -q awscliv2.zip
             sudo ./aws/install
+            rm -rf "$tmp_dir"
           args:
             creates: /usr/local/bin/aws
 
@@ -108,7 +203,7 @@
           when: ansible_os_family == 'Debian'
 
         - name: Setup Ansible (RedHat)
-          ansible.builtin.yum:
+          ansible.builtin.dnf:
             name: ansible-core
             state: present
           when: ansible_os_family == 'RedHat'
