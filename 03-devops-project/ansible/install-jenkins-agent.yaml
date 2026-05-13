@@ -138,7 +138,9 @@
           ansible.builtin.user:
             name: "{{ jenkins_agent_user }}"
             group: "{{ jenkins_agent_user }}"
-            groups: docker
+            groups: 
+             - docker
+             - sudo
             append: yes
             home: "{{ jenkins_agent_home }}"
             shell: /bin/bash
