@@ -47,7 +47,7 @@
 
         - name: Setup Ansible
           ansible.builtin.apt:
-            name: python3-ansible
+            name: ansible
             state: present
             update_cache: yes
 
@@ -97,7 +97,7 @@
 
         - name: Setup Ansible
           ansible.builtin.yum:
-            name: python3-ansible
+            name: ansible-core
             state: present
             update_cache: yes
 
