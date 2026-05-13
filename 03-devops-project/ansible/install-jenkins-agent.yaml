@@ -103,14 +103,12 @@
 
         - name: Setup Ansible (Debian)
           ansible.builtin.apt:
-            name: 
-              - python3-ansible
+            name: ansible
             state: present
           when: ansible_os_family == 'Debian'
 
         - name: Setup Ansible (RedHat)
           ansible.builtin.yum:
-            name: 
-              - python3-ansible
+            name: ansible-core
             state: present
           when: ansible_os_family == 'RedHat'
