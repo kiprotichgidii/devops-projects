@@ -96,6 +96,9 @@ Outputs:
   JenkinsPublicIp:
     Description: Public IP of the Jenkins server
     Value: !GetAtt JenkinsInstance.PublicIp
+  JenkinsAgentPublicIp:
+    Description: Public IP of the Jenkins agent server
+    Value: !GetAtt JenkinsAgentInstance.PublicIp
   JenkinsUrl:
     Description: The URL to access the Jenkins web interface
     Value: !Sub "http://${JenkinsInstance.PublicIp}:8080"
